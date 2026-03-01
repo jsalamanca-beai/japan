@@ -3,25 +3,35 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --sat: env(safe-area-inset-top);
+  --sar: env(safe-area-inset-right);
+  --sab: env(safe-area-inset-bottom);
+  --sal: env(safe-area-inset-left);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  -webkit-text-size-adjust: 100%;
+  overscroll-behavior: none;
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: #f8fafc;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 @layer utilities {
-  .text-balance {
-    text-wrap: balance;
+  .pb-safe {
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
   }
+
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+}
+
+/* Remove date input default styling on iOS */
+input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
 }
