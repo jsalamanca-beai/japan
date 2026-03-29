@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Entry, Stats } from "@/lib/types";
+import { Entry, Stats, EntryWithGap } from "@/lib/types";
 import { calculateStats, entriesWithGaps } from "@/lib/prediction";
 
 function formatDate(dateStr: string): string {
@@ -14,11 +14,81 @@ function formatDate(dateStr: string): string {
   });
 }
 
+function formatShortDate(dateStr: string): string {
+  const d = new Date(dateStr + "T00:00:00Z");
+  return d.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+  });
+}
+
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 text-center">
       <p className="text-2xl font-bold text-slate-800">{value}</p>
       <p className="text-xs text-slate-400 mt-1">{label}</p>
+    </div>
+  );
+}
+
+function GapChart({ entries }: { entries: EntryWithGap[] }) {
+  // Show chronological order (oldest first) for the chart, skip first entry (no gap)
+  const chronological = [...entries].reverse();
+  const withGap = chronological.filter((e) => e.gapDays !== null);
+
+  if (withGap.length === 0) return null;
+
+  const maxGap = Math.max(...withGap.map((e) => e.gapDays!));
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+      <div className="px-5 py-3 border-b border-slate-50">
+        <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+          Gap Between Deliveries
+        </h2>
+      </div>
+      <div className="px-5 py-4 space-y-2.5">
+        {withGap.map((entry) => (
+          <div key={entry.id} className="flex items-center gap-2.5">
+            <span className="text-[11px] text-slate-400 w-12 flex-shrink-0 text-right">
+              {formatShortDate(entry.date)}
+            </span>
+            <div className="flex-1 h-7 bg-slate-50 rounded-lg overflow-hidden relative">
+              <div
+                className={`h-full rounded-lg transition-all ${
+                  entry.side === "L" ? "bg-side-left" : "bg-side-right"
+                }`}
+                style={{
+                  width: `${Math.max((entry.gapDays! / maxGap) * 100, 8)}%`,
+                  opacity: 0.85,
+                }}
+              />
+              <span className="absolute inset-y-0 left-2 flex items-center text-[11px] font-semibold text-white drop-shadow-sm">
+                {entry.gapDays}d
+              </span>
+            </div>
+            <span
+              className={`text-[10px] font-bold w-4 flex-shrink-0 ${
+                entry.side === "L" ? "text-side-left" : "text-side-right"
+              }`}
+            >
+              {entry.side}
+            </span>
+          </div>
+        ))}
+      </div>
+      {/* Legend */}
+      <div className="px-5 pb-3 flex items-center gap-4">
+        <div className="flex items-center gap-1.5">
+          <div className="w-2.5 h-2.5 rounded-full bg-side-left" />
+          <span className="text-[10px] text-slate-400">Left</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-2.5 h-2.5 rounded-full bg-side-right" />
+          <span className="text-[10px] text-slate-400">Right</span>
+        </div>
+      </div>
     </div>
   );
 }
@@ -73,6 +143,9 @@ export default function HistoryView() {
           value={stats.averageR !== null ? `${Math.round(stats.averageR)}d` : "--"}
         />
       </div>
+
+      {/* Bar Chart */}
+      <GapChart entries={withGaps} />
 
       {/* Entry List */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
