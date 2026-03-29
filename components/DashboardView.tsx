@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Entry, Prediction } from "@/lib/types";
-import { predict, sortEntries } from "@/lib/prediction";
+import { predict, sortEntries, entriesWithGaps } from "@/lib/prediction";
 import EntryForm from "./EntryForm";
 
 function formatDate(dateStr: string): string {
@@ -62,6 +62,7 @@ export default function DashboardView() {
   const sorted = sortEntries(entries);
   const lastEntry = sorted.length > 0 ? sorted[sorted.length - 1] : null;
   const prediction: Prediction | null = predict(entries);
+  const withGaps = entriesWithGaps(entries).reverse(); // newest first
 
   function handleSuccess() {
     setShowForm(false);
@@ -165,6 +166,44 @@ export default function DashboardView() {
         >
           + New Delivery
         </button>
+      )}
+
+      {/* Full History */}
+      {withGaps.length > 0 && (
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+          <div className="px-5 py-3 border-b border-slate-50">
+            <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+              All Deliveries ({entries.length})
+            </h2>
+          </div>
+          <div className="divide-y divide-slate-50">
+            {withGaps.map((entry) => (
+              <div
+                key={entry.id}
+                className="px-5 py-3.5 flex items-center gap-3"
+              >
+                <div
+                  className={`w-3 h-3 rounded-full flex-shrink-0 ${
+                    entry.side === "L" ? "bg-side-left" : "bg-side-right"
+                  }`}
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-slate-800">
+                    {formatDate(entry.date)}
+                  </p>
+                  <p className="text-xs text-slate-400">
+                    {entry.side === "L" ? "Left" : "Right"}
+                  </p>
+                </div>
+                {entry.gapDays !== null && (
+                  <span className="text-xs text-slate-400 bg-slate-50 px-2 py-1 rounded-full">
+                    {entry.gapDays}d gap
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );
